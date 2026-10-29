@@ -21,7 +21,9 @@ namespace SubscriptionServiceTests
             _service = new SubscriptionService(_repo.Object, _payment.Object, _notify.Object);
         }
 
-
+        /// <summary>
+        /// Перевіряє викидання винятку ArgumentException, якщо користувача не знайдено.
+        /// </summary>
         [Fact]
         public void RenewSubscription_WhenMemberNotFound_ThrowsArgumentException()
         {
@@ -30,7 +32,9 @@ namespace SubscriptionServiceTests
             Assert.Throws<ArgumentException>(() => _service.RenewSubscription(1, 100, 30));
         }
 
-
+        /// <summary>
+        /// Перевіряє, що метод RenewSubscription повертає false у разі невдалої оплати.
+        /// </summary>
         [Fact]
         public void RenewSubscription_WhenPaymentFails_ReturnsFalse()
         {
@@ -42,7 +46,9 @@ namespace SubscriptionServiceTests
             Assert.False(result);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що у разі невдалої оплати дата завершення підписки користувача не оновлюється.
+        /// </summary>
         [Fact]
         public void RenewSubscription_WhenPaymentFails_ShouldNotChangeDate()
         {
@@ -56,7 +62,9 @@ namespace SubscriptionServiceTests
             Assert.NotEqual(DateTime.Today.AddDays(30), member.SubscriptionEnd);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що у разі невдалої оплати зміни стану користувача не зберігаються в репозиторії.
+        /// </summary>
         [Fact]
         public void RenewSubscription_WhenPaymentFails_NeverUpdates()
         {
@@ -68,7 +76,9 @@ namespace SubscriptionServiceTests
             _repo.Verify(r => r.Update(It.IsAny<Member>()), Times.Never);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що у разі невдалої оплати сповіщення користувачу не відправляється.
+        /// </summary>
         [Fact]
         public void RenewSubscription_WhenPaymentFails_NeverSendsNotification()
         {
@@ -80,7 +90,9 @@ namespace SubscriptionServiceTests
             _notify.Verify(n => n.SendNotification(It.IsAny<string>(), It.IsAny<int>()), Times.Never);
         }
 
-
+        /// <summary>
+        /// Перевіряє правильність встановлення нової дати завершення підписки при успішній оплаті для різних термінів.
+        /// </summary>
         [Theory] 
         [InlineData(10)]
         [InlineData(30)]
@@ -95,7 +107,9 @@ namespace SubscriptionServiceTests
             Assert.Equal(DateTime.Today.AddDays(daysToAdd), member.SubscriptionEnd?.Date);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що за відсутності користувачів жодних оновлень у репозиторії не виконується.
+        /// </summary>
         [Fact]
         public void DeactivateExpiredMembers_WhenNoMembers_DoesNotUpdateAnyMember()
         {
@@ -106,7 +120,9 @@ namespace SubscriptionServiceTests
             _repo.Verify(r => r.Update(It.IsAny<Member>()), Times.Never);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що для користувача з дійсною підпискою виклик методу оновлення не відбувається.
+        /// </summary>
         [Fact]
         public void DeactivateExpiredMembers_ValidMember_DoesNotUpdateAnyMember()
         {
@@ -119,7 +135,9 @@ namespace SubscriptionServiceTests
             _repo.Verify(r => r.Update(It.IsAny<Member>()), Times.Never);
         }
 
-
+        /// <summary>
+        /// Перевіряє коректність роботи при отриманні порожнього списку користувачів.
+        /// </summary>
         [Fact]
         public void DeactivateExpiredMembers_WhenNoMembers_ReturnsEmptyList()
         {
@@ -129,7 +147,9 @@ namespace SubscriptionServiceTests
             Assert.Empty(emptyList);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що статус активності користувача залишається true, якщо підписка ще діє.
+        /// </summary>
         [Fact]
         public void DeactivateExpiredMembers_ValidMember_RemainsActive()
         {
@@ -142,7 +162,9 @@ namespace SubscriptionServiceTests
             Assert.True(member.IsActive);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що сервіс викликає Update саме для простроченого учасника, ігноруючи активних.
+        /// </summary>
         [Fact]
         public void DeactivateExpiredMembers_MixedMembers_UpdatesExpiredMember()
         {
@@ -155,7 +177,9 @@ namespace SubscriptionServiceTests
             _repo.Verify(r => r.Update(expiredMember));
         }
 
-
+        /// <summary>
+        /// Перевіряє, що сервіс надсилає сповіщення про завершення підписки принаймні один раз для прострочених учасників.
+        /// </summary>
         [Fact]
         public void DeactivateExpiredMembers_MixedMembers_SendsExpirationNotification()
         {

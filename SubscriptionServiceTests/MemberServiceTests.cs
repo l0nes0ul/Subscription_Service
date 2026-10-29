@@ -24,7 +24,9 @@ namespace SubscriptionServiceTests
             _service = new MemberService(_repo.Object);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що метод GetMember повертає null, якщо користувача з вказаним ID не існує.
+        /// </summary>
         [Fact]
         public void GetMember_WhenNotExists_ReturnsNull()
         {
@@ -35,7 +37,9 @@ namespace SubscriptionServiceTests
             Assert.Null(result); 
         }
 
-
+        /// <summary>
+        /// Перевіряє, що метод GetMember повертає об'єкт Member, якщо користувач з вказаним ID існує.
+        /// </summary>
         [Fact]
         public void GetMember_ShouldReturnObject_IfFound()
         {
@@ -46,7 +50,9 @@ namespace SubscriptionServiceTests
             Assert.NotNull(result);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що метод GetMember повертає користувача з правильним іменем.
+        /// </summary>
         [Fact]
         public void GetMember_WhenExists_ReturnsCorrectMember()
         {
@@ -58,7 +64,9 @@ namespace SubscriptionServiceTests
             Assert.Equal("Test", result?.Name);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що метод IsActive повертає true, коли користувач існує і є активним.
+        /// </summary>
         [Fact]
         public void IsActive_WhenActive_ReturnsTrue()
         {
@@ -69,7 +77,9 @@ namespace SubscriptionServiceTests
             Assert.True(result);
         }
 
-
+        /// <summary>
+        /// Перевіряє, що метод IsActive повертає false, якщо користувача з вказаним ID не існує.
+        /// </summary>
         [Fact]
         public void IsActive_WhenMemberNull_ReturnsFalse()
         {
