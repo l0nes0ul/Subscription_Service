@@ -136,18 +136,6 @@ namespace SubscriptionServiceTests
         }
 
         /// <summary>
-        /// Перевіряє коректність роботи при отриманні порожнього списку користувачів.
-        /// </summary>
-        [Fact]
-        public void DeactivateExpiredMembers_WhenNoMembers_ReturnsEmptyList()
-        {
-            var emptyList = new List<Member>();
-            _repo.Setup(r => r.GetAll()).Returns(emptyList);
-
-            Assert.Empty(emptyList);
-        }
-
-        /// <summary>
         /// Перевіряє, що статус активності користувача залишається true, якщо підписка ще діє.
         /// </summary>
         [Fact]
