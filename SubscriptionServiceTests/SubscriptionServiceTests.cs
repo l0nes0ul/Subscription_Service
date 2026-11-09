@@ -38,12 +38,9 @@ namespace SubscriptionServiceTests
         [Fact]
         public void RenewSubscription_WhenPaymentFails_ReturnsFalse()
         {
-            _repo.Setup(r => r.GetById(1)).Returns(new Member {Id = 1});
-            _payment.Setup(p => p.VerifyPayment(1, It.IsAny<decimal>())).Returns(false);
+            var setup = ArrangeAndActPaymentFails();
             
-            var result = _service.RenewSubscription(1, 100, 30);
-            
-            Assert.False(result);
+            Assert.False(setup.result);
         }
 
         /// <summary>
@@ -52,14 +49,10 @@ namespace SubscriptionServiceTests
         [Fact]
         public void RenewSubscription_WhenPaymentFails_ShouldNotChangeDate()
         {
-            var oldDate = DateTime.Today.AddDays(-5);
-            var member = new Member {Id = 1, SubscriptionEnd = oldDate};
-            _repo.Setup(r => r.GetById(1)).Returns(member);
-            _payment.Setup(p => p.VerifyPayment(1, 100)).Returns(false);
+            var setup = ArrangeAndActPaymentFails();
+            var expectedDate = DateTime.Today.AddDays(-5);
 
-            _service.RenewSubscription(1, 100, 30);
-
-            Assert.Equal(oldDate, member.SubscriptionEnd);
+            Assert.Equal(expectedDate, setup.member.SubscriptionEnd);
         }
 
         /// <summary>
@@ -68,10 +61,7 @@ namespace SubscriptionServiceTests
         [Fact]
         public void RenewSubscription_WhenPaymentFails_NeverUpdates()
         {
-            _repo.Setup(r => r.GetById(1)).Returns(new Member {Id = 1});
-            _payment.Setup(p => p.VerifyPayment(1, It.IsAny<decimal>())).Returns(false);
-            
-            _service.RenewSubscription(1, 100, 30);
+            ArrangeAndActPaymentFails();
             
             _repo.Verify(r => r.Update(It.IsAny<Member>()), Times.Never);
         }
@@ -82,10 +72,7 @@ namespace SubscriptionServiceTests
         [Fact]
         public void RenewSubscription_WhenPaymentFails_NeverSendsNotification()
         {
-            _repo.Setup(r => r.GetById(1)).Returns(new Member {Id = 1});
-            _payment.Setup(p => p.VerifyPayment(1, It.IsAny<decimal>())).Returns(false);
-            
-            _service.RenewSubscription(1, 100, 30);
+            ArrangeAndActPaymentFails();
 
             _notify.Verify(n => n.SendNotification(It.IsAny<string>(), It.IsAny<int>()), Times.Never);
         }
@@ -221,6 +208,18 @@ namespace SubscriptionServiceTests
             _service.DeactivateExpiredMembers();
             
             _notify.Verify(n => n.SendNotification("Membership expired", It.IsAny<int>()), Times.AtLeastOnce);
+        }
+
+        private (Member member, bool result) ArrangeAndActPaymentFails()
+        {
+            var oldDate = DateTime.Today.AddDays(-5);
+            var member = new Member {Id = 1, SubscriptionEnd = oldDate};
+            _repo.Setup(r => r.GetById(1)).Returns(member);
+            _payment.Setup(p => p.VerifyPayment(1, It.IsAny<decimal>())).Returns(false);
+            
+            var result = _service.RenewSubscription(1, 100, 30);
+            
+            return (member, result);
         }
 
         private (Member member, bool result) ArrangeAndActPaymentSucceeds(int daysToAdd = 30)
