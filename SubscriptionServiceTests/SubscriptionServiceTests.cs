@@ -59,7 +59,7 @@ namespace SubscriptionServiceTests
 
             _service.RenewSubscription(1, 100, 30);
 
-            Assert.NotEqual(DateTime.Today.AddDays(30), member.SubscriptionEnd);
+            Assert.Equal(oldDate, member.SubscriptionEnd);
         }
 
         /// <summary>
@@ -91,6 +91,39 @@ namespace SubscriptionServiceTests
         }
 
         /// <summary>
+        /// Перевіряє, що при успішному продовженні підписки статус користувача змінюється на активний.
+        /// </summary>
+        [Fact]
+        public void RenewSubscription_ValidData_SetsMemberAsActive()
+        {
+            var setup = ArrangeAndActPaymentSucceeds();
+
+            Assert.True(setup.member.IsActive);
+        }
+
+        /// <summary>
+        /// Перевіряє, що при успішному продовженні підписки викликається метод Update.
+        /// </summary>
+        [Fact]
+        public void RenewSubscription_ValidData_CallsUpdateMethod()
+        {
+            var setup = ArrangeAndActPaymentSucceeds();
+
+            _repo.Verify(r => r.Update(setup.member), Times.Once);
+        }
+
+        /// <summary>
+        /// Перевіряє, що при успішному продовженні підписки користувачу надсилається сповіщення про це.
+        /// </summary>
+        [Fact]
+        public void RenewSubscription_ValidData_SendsNotification()
+        {
+            ArrangeAndActPaymentSucceeds();
+
+            _notify.Verify(n => n.SendNotification("Subscription renewed!", 1), Times.Once);
+        }
+
+        /// <summary>
         /// Перевіряє правильність встановлення нової дати завершення підписки при успішній оплаті для різних термінів.
         /// </summary>
         [Theory] 
@@ -98,13 +131,9 @@ namespace SubscriptionServiceTests
         [InlineData(30)]
         public void RenewSubscription_ValidData_ExtendsSubscriptionProperly(int daysToAdd)
         {
-            var member = new Member {Id = 1, IsActive = false};
-            _repo.Setup(r => r.GetById(1)).Returns(member);
-            _payment.Setup(p => p.VerifyPayment(1, 100)).Returns(true);
-            
-            _service.RenewSubscription(1, 100, daysToAdd);
+            var setup = ArrangeAndActPaymentSucceeds(daysToAdd);
 
-            Assert.Equal(DateTime.Today.AddDays(daysToAdd), member.SubscriptionEnd?.Date);
+            Assert.Equal(DateTime.Today.AddDays(daysToAdd), setup.member.SubscriptionEnd?.Date);
         }
 
         /// <summary>
@@ -151,6 +180,20 @@ namespace SubscriptionServiceTests
         }
 
         /// <summary>
+        /// Перевіряє, що статус активності змінюється на false, якщо підписка вже протермінована.
+        /// </summary>
+        [Fact]
+        public void DeactivateExpiredMembers_ExpiredMember_SetsIsActiveToFalse()
+        {
+            var expiredMember = new Member {Id = 1, IsActive = true, SubscriptionEnd = DateTime.Now.AddDays(-1)};
+            _repo.Setup(r => r.GetAll()).Returns(new List<Member> {expiredMember});
+
+            _service.DeactivateExpiredMembers();
+
+            Assert.False(expiredMember.IsActive);
+        }
+
+        /// <summary>
         /// Перевіряє, що сервіс викликає Update саме для простроченого учасника, ігноруючи активних.
         /// </summary>
         [Fact]
@@ -178,6 +221,17 @@ namespace SubscriptionServiceTests
             _service.DeactivateExpiredMembers();
             
             _notify.Verify(n => n.SendNotification("Membership expired", It.IsAny<int>()), Times.AtLeastOnce);
+        }
+
+        private (Member member, bool result) ArrangeAndActPaymentSucceeds(int daysToAdd = 30)
+        {
+            var member = new Member {Id = 1, IsActive = false};
+            _repo.Setup(r => r.GetById(1)).Returns(member);
+            _payment.Setup(p => p.VerifyPayment(1, 100)).Returns(true);
+            
+            var result = _service.RenewSubscription(1, 100, daysToAdd);
+            
+            return (member, result);
         }
     }
 
